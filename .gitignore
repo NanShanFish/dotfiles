@@ -1,4 +1,7 @@
-/nvim/
+# 排除/nvim文件夹 不排除自定义设置
+/nvim/*
 !/nvim/init.lua
 !/nvim/lua/
 !/nvim/lua/*
+
+/dwm/DEF/
