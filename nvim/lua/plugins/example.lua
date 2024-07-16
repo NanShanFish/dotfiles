@@ -10,12 +10,12 @@ if true then
     { "Mofiqul/dracula.nvim" },
 
     -- Configure LazyVim to load gruvbox
-    {
-      "LazyVim/LazyVim",
-      opts = {
-        colorscheme = "dracula",
-      },
-    },
+    -- {
+    --   "LazyVim/LazyVim",
+    --   opts = {
+    --     colorscheme = "dracula",
+    --   },
+    -- },
     -- ███████╗██╗  ██╗ █████╗ ███╗   ██╗
     -- ██╔════╝██║  ██║██╔══██╗████╗  ██║
     -- ███████╗███████║███████║██╔██╗ ██║
@@ -29,6 +29,9 @@ if true then
       enabled = true,
       init = false,
       opts = function()
+        function note_files()
+          return LazyVim.pick.wrap("files", { cwd = "/home/shan/Documents/markdown" })
+        end
         local dashboard = require("alpha.themes.dashboard")
         -- Define and set highlight groups for each logo line
         vim.api.nvim_set_hl(0, "NeovimDashboardLogo1", { fg = "#d1c4e9" }) -- Indigo
@@ -83,7 +86,8 @@ if true then
     -- stylua: ignore
     dashboard.section.buttons.val = {
       dashboard.button("f", " " .. " Find file",       LazyVim.pick()),
-      dashboard.button("n", " " .. " Notes",          [[<cmd>e /home/shan/Documents/markdown<cr>]]),
+      -- dashboard.button("n", " " .. " Notes",          [[<cmd>e /home/shan/Documents/markdown<cr>]]),
+      dashboard.button("n", " " .. " Notes",           note_files()),
       dashboard.button("r", " " .. " Recent files",    LazyVim.pick("oldfiles")),
       dashboard.button("g", " " .. " Find text",       LazyVim.pick("live_grep")),
       dashboard.button("c", " " .. " Config",          LazyVim.pick.config_files()),
