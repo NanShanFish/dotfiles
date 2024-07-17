@@ -3,7 +3,7 @@
 static int showsystray                   = 1;         /* 是否显示托盘栏 */
 static const int newclientathead         = 0;         /* 定义新窗口在栈顶还是栈底 */
 static const int managetransientwin      = 1;         /* 是否管理临时窗口 */
-static const unsigned int borderpx       = 2;         /* 窗口边框大小 */
+static const unsigned int borderpx       = 3;         /* 窗口边框大小 */
 static const unsigned int systraypinning = 1;         /* 托盘跟随的显示器 0代表不指定显示器 */
 static const unsigned int systrayspacing = 0;         /* 托盘间距 */
 static const unsigned int systrayspadding = 0;        /* 托盘和状态栏的间隙 */
@@ -14,7 +14,7 @@ static int gappo                          = 5;        /* 窗口与边缘 缝隙�
 static const int _gappo                  = 12;        /* 窗口与窗口 缝隙大小 不可变 用于恢复时的默认值 */
 static const int _gappi                  = 12;        /* 窗口与边缘 缝隙大小 不可变 用于恢复时的默认值 */
 static const int vertpad                 = 0;         /* vertical padding of bar */
-static const int sidepad                 = 0;         /* horizontal padding of bar */
+static const int sidepad                 = 5;         /* horizontal padding of bar */
 static const int overviewgappi           = 12;        /* overview时 窗口与边缘 缝隙大小 */
 static const int overviewgappo           = 12;        /* overview时 窗口与窗口 缝隙大小 */
 static const int showbar                 = 1;         /* 是否显示状态栏 */
@@ -23,18 +23,33 @@ static const float mfact                 = 0.65;      /* 主工作区 大小比�
 static const int   nmaster               = 1;         /* 主工作区 窗口数量 */
 static const unsigned int snap           = 5;         /* 边缘依附宽度 */
 static const unsigned int baralpha       = 0xa0;      /* 状态栏透明度 */
-static const unsigned int borderalpha    = 0xdd;      /* 边框透明度 */
+static const unsigned int borderalpha    = 0xff;      /* 边框透明度 */
 static const char *fonts[]               = { "Maple Mono NF:style=medium:size=13", "Ubuntu Nerd Font Mono:size=13" };
+/*
+static const char black[]       = "#21222C";
+static const char white[]       = "#f8f8f2";
+static const char gray2[]       = "#282a36"; // unfocused window border
+static const char gray3[]       = "#44475a";
+static const char gray4[]       = "#282a36";
+static const char blue[]        = "#bd93f9";  // focused window border
+static const char green[]       = "#50fa7b";
+static const char red[]         = "#ff5555";
+static const char orange[]      = "#ffb86c";
+static const char yellow[]      = "#f1fa8c";
+static const char pink[]        = "#ff79c6";
+static const char col_borderbar[]  = "#21222c"; // inner border
+*/
+
 static const char *colors[][3]           = {          /* 颜色设置 ColFg, ColBg, ColBorder */ 
-    [SchemeNorm] = { "#bbbbbb", "#333333", "#242631" },
-    [SchemeSel] = { "#111111", "#ffe0ac", "#c8b4eb" },
-    [SchemeSelGlobal] = { "#ffffff", "#37474F", "#FFC0CB" },
-    [SchemeHid] = { "#dddddd", "#242631", NULL },
-    [SchemeSystray] = { NULL, "#7799AA", NULL },
-    [SchemeUnderline] = { "#ffe9bc", NULL, NULL }, 
-    [SchemeNormTag] = { "#bbbbbb", "#333333", NULL },
-    [SchemeSelTag] = { "#ffffff", "#8573a4", NULL },
-    [SchemeBarEmpty] = { NULL, "#242631", NULL },
+    [SchemeNorm] = { "#999999", "#21222C", "#21222C" },
+    [SchemeSel] = { "#282a36", "#bd93f9", "#bd93f9" },
+    [SchemeSelGlobal] = { "#f1fa8c", "#21222C", "#f1fa8c" },
+    [SchemeHid] = { "#304050", "#21222c", NULL },
+    [SchemeSystray] = { NULL, "#21222c", NULL },
+    [SchemeUnderline] = { "#ff556c", "#ffffff", NULL }, 
+    [SchemeNormTag] = { "#bbbbbb", "#21222c", NULL },
+    [SchemeSelTag] = { "#ff5555", "#21222C", NULL },
+    [SchemeBarEmpty] = { NULL, "#21222c", NULL },
 };
 static const unsigned int alphas[][3]    = {          /* 透明度设置 ColFg, ColBg, ColBorder */ 
     [SchemeNorm] = { OPAQUE, baralpha, borderalpha }, 
@@ -42,7 +57,7 @@ static const unsigned int alphas[][3]    = {          /* 透明度设置 ColFg, 
     [SchemeSelGlobal] = { OPAQUE, baralpha, borderalpha },
     [SchemeNormTag] = { OPAQUE, baralpha, borderalpha }, 
     [SchemeSelTag] = { OPAQUE, baralpha, borderalpha },
-    [SchemeBarEmpty] = { 0, 0x11, 0 },
+    [SchemeBarEmpty] = { 0, 0, 0 },
     [SchemeStatusText] = { OPAQUE, 0x88, 0 },
 };
 
@@ -56,14 +71,14 @@ static const char scratchpadname[] = "scratchpad";
 /* 自定义tag名称 */
 /* 自定义特定实例的显示状态 */
 static const char *tags[] = { 
-    "一",
-    "二",
-    "三",
-    "四",
-    "五",
-    "六",
-    "七",
-    "八",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
     "", //tag 9: 放一些聊天的软件 super 0 
 };
 
@@ -111,7 +126,7 @@ static const Rule rules[] = {
     { NULL,                  NULL,                "crx_",            0,            1,          0,          0,        -1,      0}, // 错误载入时 会有crx_ 浮动
     { NULL,                  NULL,                "broken",          0,            1,          0,          0,        -1,      0}, // 错误载入时 会有broken 浮动
 };
-static const char *overviewtag = "󰣇";
+static const char *overviewtag = "OVERVIEW";
 static const Layout overviewlayout = { "󰕬",  overview };
 
 /* 自定义布局 */
@@ -129,10 +144,8 @@ static const Layout layouts[] = {
 
 static Key keys[] = {
     /* modifier            key              function          argument */
-    // { MODKEY,              XK_equal,        togglesystray,    {0} },                     /* super +            |  切换 托盘栏显示状态 */
 
-    { MODKEY,              XK_Tab,          focusstack,       {.i = +1} },               /* super tab          |  本tag内切换聚焦窗口 */
-    { MODKEY|ShiftMask,    XK_Tab,          focusstack,       {.i = -1} },               /* super shift tab    |  本tag内切换聚焦窗口 */
+    { MODKEY|ShiftMask,    XK_equal,        togglesystray,    {0} },                     /* super shift +      |  切换 托盘栏显示状态 */
     { MODKEY,              XK_j,            focusstack,       {.i = +1} },               /* super j            |  本tag内切换聚焦窗口 */
     { MODKEY,              XK_k,            focusstack,       {.i = -1} },               /* super k            |  本tag内切换聚焦窗口 */
     { MODKEY,              XK_Up,           focusstack,       {.i = -1} },               /* super up           |  本tag内切换聚焦窗口 */
@@ -145,7 +158,7 @@ static Key keys[] = {
     { MODKEY|ShiftMask,    XK_Left,         tagtoleft,        {0} },                     /* super shift left   |  将本窗口移动到左边tag */
     { MODKEY|ShiftMask,    XK_Right,        tagtoright,       {0} },                     /* super shift right  |  将本窗口移动到右边tag */
 
-    { MODKEY,              XK_a,            toggleoverview,   {0} },                     /* super a            |  显示所有tag 或 跳转到聚焦窗口的tag */
+    { MODKEY,              XK_Tab,          toggleoverview,   {0} },                     /* super tab          |  显示所有tag 或 跳转到聚焦窗口的tag */
 
     { MODKEY,              XK_comma,        setmfact,         {.f = -0.05} },            /* super ,            |  缩小主工作区 */
     { MODKEY,              XK_period,       setmfact,         {.f = +0.05} },            /* super .            |  放大主工作区 */
@@ -184,8 +197,6 @@ static Key keys[] = {
     { MODKEY|Mod1Mask,     XK_Left,         resizewin,        {.ui = H_REDUCE} },        /* super alt left     |  调整窗口 */
     { MODKEY|Mod1Mask,     XK_Right,        resizewin,        {.ui = H_EXPAND} },        /* super alt right    |  调整窗口 */
 
-   //{ MODKEY,              XK_k,            focusdir,         {.i = UP } },              /* super k            | 二维聚焦窗口 */
-   //{ MODKEY,              XK_j,            focusdir,         {.i = DOWN } },            /* super j            | 二维聚焦窗口 */
     { MODKEY,              XK_h,            focusdir,         {.i = LEFT } },            /* super h            | 二维聚焦窗口 */
     { MODKEY,              XK_l,            focusdir,         {.i = RIGHT } },           /* super l            | 二维聚焦窗口 */
     { MODKEY|ShiftMask,    XK_k,            exchange_client,  {.i = UP } },              /* super shift k      | 二维交换窗口 (仅平铺) */
@@ -198,16 +209,17 @@ static Key keys[] = {
 
     /* spawn + SHCMD 执行对应命令 */
     { MODKEY,              XK_Return, spawn, SHCMD("alacritty") },                                                      /* super enter      | 打开alacritty终端      */
-    { MODKEY,              XK_b,      spawn, SHCMD("vivaldi") },                                                        /* super b          | 打开firefox            */
-    { Mod1Mask,            XK_Tab,    spawn, SHCMD("dmenu_run")},                                                       /* alt tab          | 打开dmenu              */ 
-    { MODKEY,              XK_p,      spawn, SHCMD("$DWM/DEF/blurlock.sh") },                                           /* super n          | 锁定屏幕               */
-    { MODKEY,              XK_e,      spawn, SHCMD("thunar") },                                                         /* super e          | 打开thunar                 */
-    //{ ControlMask|Mod1Mask,XK_a,      spawn, SHCMD("flameshot gui -c -p ~/Pictures/screenshots") },                     /* super shift a    | 截图                   */
+    { MODKEY,              XK_b,      spawn, SHCMD("vivaldi") },                                                        /* super b          | 打开 vivaldi           */
+    { MODKEY,              XK_w,      spawn, SHCMD("rofi -show window") },                                              /* super w          | 打开 rofi window           */
+    { Mod1Mask,            XK_Tab,    spawn, SHCMD("rofi -show run")},                                                  /* alt tab          | 打开rofi run           */ 
+    { MODKEY,              XK_p,      spawn, SHCMD("~/Scripts/blurlock.sh") },                                          /* super p          | 锁定屏幕               */
+    { MODKEY,              XK_m,      spawn, SHCMD("~/Scripts/rofi.sh") },                                              /* super m          | 自定义脚本              */
     { MODKEY|ShiftMask,    XK_q,      spawn, SHCMD("kill -9 $(xprop | grep _NET_WM_PID | awk '{print $3}')") },         /* super shift q    | 选中某个窗口并强制kill */
     { MODKEY,              XK_n,      togglescratch, SHCMD("alacritty -t scratchpad --class float") },                  /* super n          | 打开便携终端 scratchpad        */
-    { MODKEY|ShiftMask,    XK_Up,     spawn, SHCMD("$DWM/DEF/set_vol.sh up") },                                         /* super shift up   | 音量加                 */
-    { MODKEY|ShiftMask,    XK_Down,   spawn, SHCMD("$DWM/DEF/set_vol.sh down") },                                       /* super shift down | 音量减                 */
 
+    // { MODKEY|ShiftMask,    XK_Down,   spawn, SHCMD("$DWM/DEF/set_vol.sh down") },                                    /* super shift down | 音量减                 */
+    // { MODKEY|ShiftMask,    XK_Up,     spawn, SHCMD("$DWM/DEF/set_vol.sh up") },                                      /* super shift up   | 音量加                 */
+    //{ ControlMask|Mod1Mask,XK_a,      spawn, SHCMD("flameshot gui -c -p ~/Pictures/screenshots") },                   /* super shift a    | 截图                   */
     // { MODKEY,              XK_minus,  spawn, SHCMD("st -c FG") },                                                    /* super -          | 打开全局st终端         */
     // { MODKEY|ShiftMask,    XK_p,      spawn, SHCMD("/home/shan/Scripts/shutdown.sh") },                              /* super shift p    | poweroff               */
     // { MODKEY,              XK_space,  spawn, SHCMD("st -c float") },                                                 /* super space      | 打开浮动st终端         */
