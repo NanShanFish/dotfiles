@@ -5,3 +5,7 @@
 !/nvim/lua/*
 
 /dwm/DEF/
+
+/fish/*
+!/fish/config.fish
+!/fish/functions/fish_prompt.fish

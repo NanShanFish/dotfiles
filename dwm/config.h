@@ -97,7 +97,7 @@ static const Rule rules[] = {
     { NULL,                  NULL,                "图片查看器",      0,            1,          0,          0,        -1,      0}, // qq图片查看器        浮动
     { NULL,                  NULL,                "图片查看",        0,            1,          0,          0,        -1,      0}, // 微信图片查看器      浮动
     { NULL,                  NULL,                "图片预览",        0,            1,          0,          0,        -1,      0}, // 企业微信图片查看器  浮动
-    { NULL,                  NULL,                "Media viewer",    0,            1,          0,          0,        -1,      0}, // tg图片查看器        浮动
+    { NULL,                  NULL,                "Media viewer",   0,            1,          0,          0,        -1,      0}, // tg图片查看器        浮动
 
     /** 普通优先度 */
     { NULL,                 "qq",                  NULL,             1 << 8,       0,          0,          1,        -1,      0}, // qq         tag -> ﬄ 无边框
@@ -151,8 +151,8 @@ static Key keys[] = {
     { MODKEY,              XK_Up,           focusstack,       {.i = -1} },               /* super up           |  本tag内切换聚焦窗口 */
     { MODKEY,              XK_Down,         focusstack,       {.i = +1} },               /* super down         |  本tag内切换聚焦窗口 */
 
-    { MODKEY,              XK_minus,        viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
-    { MODKEY,              XK_equal,        viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
+    { MODKEY,              XK_comma,        viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
+    { MODKEY,              XK_period,       viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
     { MODKEY,              XK_Left,         viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
     { MODKEY,              XK_Right,        viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
     { MODKEY|ShiftMask,    XK_Left,         tagtoleft,        {0} },                     /* super shift left   |  将本窗口移动到左边tag */
@@ -160,8 +160,10 @@ static Key keys[] = {
 
     { MODKEY,              XK_Tab,          toggleoverview,   {0} },                     /* super tab          |  显示所有tag 或 跳转到聚焦窗口的tag */
 
-    { MODKEY,              XK_comma,        setmfact,         {.f = -0.05} },            /* super ,            |  缩小主工作区 */
-    { MODKEY,              XK_period,       setmfact,         {.f = +0.05} },            /* super .            |  放大主工作区 */
+    // { MODKEY,              XK_minus,        viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
+    // { MODKEY,              XK_equal,        viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
+    { MODKEY,              XK_minus,        setmfact,         {.f = -0.05} },            /* super -            |  缩小主工作区 */
+    { MODKEY,              XK_equal,        setmfact,         {.f = +0.05} },            /* super =            |  放大主工作区 */
 
     { MODKEY,              XK_i,            hidewin,          {0} },                     /* super i            |  隐藏 窗口 */
     { MODKEY|ShiftMask,    XK_i,            restorewin,       {0} },                     /* super shift i      |  取消隐藏 窗口 */
@@ -180,8 +182,8 @@ static Key keys[] = {
     { MODKEY|ControlMask,  XK_q,            forcekillclient,  {0} },                     /* super ctrl q       |  强制关闭窗口(处理某些情况下无法销毁的窗口) */
     { MODKEY|ControlMask,  XK_F12,          quit,             {0} },                     /* super ctrl f12     |  退出dwm */
 
-  { MODKEY|ShiftMask,    XK_space,        selectlayout,     {.v = &layouts[1]} },      /* super shift space  |  切换到另一个布局 */
-  { MODKEY,              XK_o,            showonlyorall,    {0} },                     /* super o            |  切换 只显示一个窗口 / 全部显示 */
+    { MODKEY|ShiftMask,    XK_space,        selectlayout,     {.v = &layouts[1]} },      /* super shift space  |  切换到另一个布局 */
+    { MODKEY,              XK_o,            showonlyorall,    {0} },                     /* super o            |  切换 只显示一个窗口 / 全部显示 */
 
     { MODKEY|ControlMask,  XK_equal,        setgap,           {.i = -6} },               /* super ctrl +       |  窗口增大 */
     { MODKEY|ControlMask,  XK_minus,        setgap,           {.i = +6} },               /* super ctrl -       |  窗口减小 */
@@ -209,9 +211,11 @@ static Key keys[] = {
 
     /* spawn + SHCMD 执行对应命令 */
     { MODKEY,              XK_Return, spawn, SHCMD("alacritty") },                                                      /* super enter      | 打开alacritty终端      */
+    { MODKEY,              XK_space,  spawn, SHCMD("alacritty --class float") },                                        /* super space      | 打开浮动 alacritty终端      */
+    { MODKEY,              XK_e,      spawn, SHCMD("alacritty -e yazi") },                                              /* super e          | 打开浮动 yazi         */
     { MODKEY,              XK_b,      spawn, SHCMD("vivaldi") },                                                        /* super b          | 打开 vivaldi           */
     { MODKEY,              XK_w,      spawn, SHCMD("rofi -show window") },                                              /* super w          | 打开 rofi window           */
-    { Mod1Mask,            XK_Tab,    spawn, SHCMD("rofi -show run")},                                                  /* alt tab          | 打开rofi run           */ 
+    { Mod1Mask,            XK_Tab,    spawn, SHCMD("rofi -show drun")},                                                 /* alt tab          | 打开rofi run           */ 
     { MODKEY,              XK_p,      spawn, SHCMD("~/Scripts/blurlock.sh") },                                          /* super p          | 锁定屏幕               */
     { MODKEY,              XK_m,      spawn, SHCMD("~/Scripts/rofi.sh") },                                              /* super m          | 自定义脚本              */
     { MODKEY|ShiftMask,    XK_q,      spawn, SHCMD("kill -9 $(xprop | grep _NET_WM_PID | awk '{print $3}')") },         /* super shift q    | 选中某个窗口并强制kill */
@@ -222,8 +226,6 @@ static Key keys[] = {
     //{ ControlMask|Mod1Mask,XK_a,      spawn, SHCMD("flameshot gui -c -p ~/Pictures/screenshots") },                   /* super shift a    | 截图                   */
     // { MODKEY,              XK_minus,  spawn, SHCMD("st -c FG") },                                                    /* super -          | 打开全局st终端         */
     // { MODKEY|ShiftMask,    XK_p,      spawn, SHCMD("/home/shan/Scripts/shutdown.sh") },                              /* super shift p    | poweroff               */
-    // { MODKEY,              XK_space,  spawn, SHCMD("st -c float") },                                                 /* super space      | 打开浮动st终端         */
-    // { MODKEY,              XK_F1,     spawn, SHCMD("killall pcmanfm || pcmanfm") },                                  /* super F1         | 打开/关闭pcmanfm       */
     // { MODKEY,              XK_d,      spawn, SHCMD("rofi -show run") },                                              /* super d          | rofi: 执行run          */
     // { MODKEY,              XK_p,      spawn, SHCMD("$DWM/DEF/rofi.sh") },                                            /* super p          | rofi: 执行自定义脚本   */
     // { MODKEY,              XK_s,      togglescratch, SHCMD("st -t scratchpad -c float") },                           /* super s          | 打开scratch终端        */
@@ -250,17 +252,17 @@ static Button buttons[] = {
     { ClkClientWin,        MODKEY,          Button3,          resizemouse,   {0} },                                   // super+右键  |  拖拽窗口     |  改变窗口大小
     /* 点击tag操作 */
     { ClkTagBar,           0,               Button1,          view,          {0} },                                   // 左键        |  点击tag      |  切换tag
-  { ClkTagBar,           0,               Button3,          toggleview,    {0} },                                   // 右键        |  点击tag      |  切换是否显示tag
+    { ClkTagBar,           0,               Button3,          toggleview,    {0} },                                   // 右键        |  点击tag      |  切换是否显示tag
     { ClkTagBar,           MODKEY,          Button1,          tag,           {0} },                                   // super+左键  |  点击tag      |  将窗口移动到对应tag
     { ClkTagBar,           0,               Button4,          viewtoleft,    {0} },                                   // 鼠标滚轮上  |  tag          |  向前切换tag
-  { ClkTagBar,           0,               Button5,          viewtoright,   {0} },                                   // 鼠标滚轮下  |  tag          |  向后切换tag
+    { ClkTagBar,           0,               Button5,          viewtoright,   {0} },                                   // 鼠标滚轮下  |  tag          |  向后切换tag
     /* 点击状态栏操作 */
     { ClkStatusText,       0,               Button1,          clickstatusbar,{0} },                                   // 左键        |  点击状态栏   |  根据状态栏的信号执行 ~/scripts/dwmstatusbar.sh $signal L
     { ClkStatusText,       0,               Button2,          clickstatusbar,{0} },                                   // 中键        |  点击状态栏   |  根据状态栏的信号执行 ~/scripts/dwmstatusbar.sh $signal M
     { ClkStatusText,       0,               Button3,          clickstatusbar,{0} },                                   // 右键        |  点击状态栏   |  根据状态栏的信号执行 ~/scripts/dwmstatusbar.sh $signal R
     { ClkStatusText,       0,               Button4,          clickstatusbar,{0} },                                   // 鼠标滚轮上  |  状态栏       |  根据状态栏的信号执行 ~/scripts/dwmstatusbar.sh $signal U
     { ClkStatusText,       0,               Button5,          clickstatusbar,{0} },                                   // 鼠标滚轮下  |  状态栏       |  根据状态栏的信号执行 ~/scripts/dwmstatusbar.sh $signal D
-                                                                                                                      //
+
     /* 点击bar空白处 */
     // { ClkBarEmpty,         0,               Button1,          spawn, SHCMD("~/scripts/call_rofi.sh window") },        // 左键        |  bar空白处    |  rofi 执行 window
     // { ClkBarEmpty,         0,               Button3,          spawn, SHCMD("~/scripts/call_rofi.sh drun") },          // 右键        |  bar空白处    |  rofi 执行 drun
