@@ -725,7 +725,7 @@ void buttonpress(XEvent *e) {
         arg.v = c;
       }
     }
-  } else if ((c = wintoclient(ev->window))) {
+  } else if ((c = wintoclient(ev->window))) { //点击在窗口上
     focus(c);
     restack(selmon);
     XAllowEvents(dpy, ReplayPointer, CurrentTime);
@@ -1459,12 +1459,12 @@ void focusstack(const Arg *arg) {
   Client *c = NULL, *tc = selmon->sel;
   int last = -1, cur = 0, issingle = issinglewin(NULL);
 
-  if (!tc)
+  if (!tc)//当前未选中窗口
     tc = selmon->clients;
-  if (!tc)
+  if (!tc)//监视器上没有窗口
     return;
 
-  for (c = selmon->clients; c; c = c->next) {
+  for (c = selmon->clients; c; c = c->next) {//遍历当前窗口列表
     if (ISVISIBLE(c) && (issingle || !HIDDEN(c))) {
       last++;
       tempClients[last] = c;
@@ -1487,14 +1487,13 @@ void focusstack(const Arg *arg) {
       c = tempClients[0];
   }
 
+  if(!c)//没有选中窗口
+    return;
   if (issingle) {
-    if (c)
-      hideotherwins(&(Arg){.v = c});
+    hideotherwins(&(Arg){.v = c});
   } else {
-    if (c) {
-      pointerfocuswin(c);
-      restack(selmon);
-    }
+    pointerfocuswin(c);
+    restack(selmon);
   }
 }
 
@@ -3854,15 +3853,13 @@ void focusdir(const Arg *arg) {
   int issingle = issinglewin(NULL);
 
   c = direction_select(arg);
-
-  if (issingle) {
-    if (c)
-      hideotherwins(&(Arg){.v = c});
-  } else {
-    if (c) {
-      pointerfocuswin(c);
-      restack(selmon);
-    }
+  if(!c)//若目标方向没有窗口
+    return;
+  if (issingle) {//当前tag只有一个窗口?
+    hideotherwins(&(Arg){.v = c});
+  } else {//c为对应方向窗口
+    pointerfocuswin(c);
+    restack(selmon);
   }
 }
 

@@ -35,4 +35,4 @@ execute_menu() {
   esac
 }
 
-execute_menu "$(call_menu | rofi -dmenu -p "")"
+execute_menu "$(call_menu | rofi -dmenu -matching prefix -p "")"

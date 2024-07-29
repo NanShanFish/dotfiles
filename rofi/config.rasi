@@ -4,12 +4,17 @@ configuration{
     font: "Maple Mono NF 12";
     show-icons: true;
     icon-theme: "Paper Mono";
-    terminal: "st";
+    terminal: "alacritty";
     drun-display-format: "{icon} {name}";
     location: 0;
     disable-history: false;
     hide-scrollbar: true;
     display-drun: "   Apps ";
+    kb-remove-to-eol: "";
+    kb-accept-entry: "Return,KP_Enter";
+    kb-row-up: "Control+k";
+    kb-row-down: "Control+j";
+    kb-cancel: "Escape,Control+c,Control+q";
 }
 
 @theme "everblush"

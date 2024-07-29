@@ -6,14 +6,14 @@
 -- * override the configuration of LazyVim plugins
 if true then
   return {
-    -- add dracula
-    { "Mofiqul/dracula.nvim" },
+    -- add everforest
+    { "sainnhe/everforest" },
 
-    -- Configure LazyVim to load dracula
+    -- Configure LazyVim to load everforest
     {
       "LazyVim/LazyVim",
       opts = {
-        colorscheme = "dracula",
+        colorscheme = "everforest",
       },
     },
     -- ███████╗██╗  ██╗ █████╗ ███╗   ██╗
@@ -22,7 +22,7 @@ if true then
     -- ╚════██║██╔══██║██╔══██║██║╚██╗██║
     -- ███████║██║  ██║██║  ██║██║ ╚████║
     -- ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝
-    --
+    -- DashBoard 配置
     {
       "goolord/alpha-nvim",
       event = "VimEnter",
@@ -34,12 +34,12 @@ if true then
         end
         local dashboard = require("alpha.themes.dashboard")
         -- Define and set highlight groups for each logo line
-        vim.api.nvim_set_hl(0, "NeovimDashboardLogo1", { fg = "#d1c4e9" }) -- Indigo
-        vim.api.nvim_set_hl(0, "NeovimDashboardLogo2", { fg = "#b1a2d8" }) -- Deep Purple
-        vim.api.nvim_set_hl(0, "NeovimDashboardLogo3", { fg = "#9180c6" }) -- Deep Purple
-        vim.api.nvim_set_hl(0, "NeovimDashboardLogo4", { fg = "#715fb5" }) -- Medium Purple
-        vim.api.nvim_set_hl(0, "NeovimDashboardLogo5", { fg = "#513da3" }) -- Light Purple
-        vim.api.nvim_set_hl(0, "NeovimDashboardLogo6", { fg = "#311b92" }) -- Very Light Purple
+        vim.api.nvim_set_hl(0, "NeovimDashboardLogo1", { fg = "#d44b3a" }) -- Indigo
+        vim.api.nvim_set_hl(0, "NeovimDashboardLogo2", { fg = "#fb865c" }) -- Deep Purple
+        vim.api.nvim_set_hl(0, "NeovimDashboardLogo3", { fg = "#fdc76f" }) -- Deep Purple
+        vim.api.nvim_set_hl(0, "NeovimDashboardLogo4", { fg = "#07fb0f" }) -- Medium Purple
+        vim.api.nvim_set_hl(0, "NeovimDashboardLogo5", { fg = "#03acff" }) -- Light Purple
+        vim.api.nvim_set_hl(0, "NeovimDashboardLogo6", { fg = "#582589" }) -- Very Light Purple
         vim.api.nvim_set_hl(0, "NeovimDashboardUsername", { fg = "#D1C4E9" }) -- light purple
         dashboard.section.header.type = "group"
         dashboard.section.header.val = {
@@ -195,6 +195,17 @@ if true then
               fallback()
             end
           end, { "i", "s" }),
+        })
+      end,
+    },
+    -- 禁用Enter补全
+    {
+      "hrsh7th/nvim-cmp",
+      opts = function(_, opts)
+        local cmp = require("cmp")
+        opts.mapping = vim.tbl_deep_extend("force", opts.mapping, {
+          ["<CR>"] = cmp.mapping.confirm({ select = false }),
+          -- put here the keymaps that you want to change
         })
       end,
     },

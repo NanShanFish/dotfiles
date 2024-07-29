@@ -15,7 +15,7 @@ map("n", "<leader>q", "<cmd>wqa<CR>", opt)
 map("n", "|", "<cmd>vsp<CR><C-w>w", opt)
 map("n", "\\", "<cmd>sp<CR><C-w>w", opt)
 -- map('n', '<leader>c', '<cmd>close<CR>', opt)
-map("n", "<leader>t", "<cmd>below 10sp | term<CR>a", opt)
+map("n", "<leader>t", "<cmd>below 10sp | term cd %:h ; fish<CR>a", opt)
 map("n", "H", "<cmd>BufferLineCyclePrev<CR>", opt)
 map("n", "L", "<cmd>BufferLineCycleNext<CR>", opt)
 
@@ -27,3 +27,6 @@ map("t", "<C-j>", "<C-\\><C-n><C-w>j", opt)
 map("t", "<C-k>", "<C-\\><C-n><C-w>k", opt)
 map("t", "<C-l>", "<C-\\><C-n><C-w>l", opt)
 map("t", "<Esc>", "<C-\\><C-n>", opt)
+-- ------------------------------------------------
+--               COMMAND MODE                    --
+-- ------------------------------------------------

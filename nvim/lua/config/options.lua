@@ -12,7 +12,9 @@ vim.bo.shiftwidth = 2
 
 vim.o.list = true
 vim.o.listchars = "space:·"
-vim.g.guifont = "Maple Mono NF"
+vim.g.guifont = "maple mono nf"
 -- 禁止折行
 vim.wo.wrap = false
 vim.o.whichwrap = "<,>,[,]"
+
+vim.g.autoformat = false

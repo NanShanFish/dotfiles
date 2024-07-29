@@ -24,7 +24,7 @@ static const int   nmaster               = 1;         /* 主工作区 窗口数�
 static const unsigned int snap           = 5;         /* 边缘依附宽度 */
 static const unsigned int baralpha       = 0xa0;      /* 状态栏透明度 */
 static const unsigned int borderalpha    = 0xff;      /* 边框透明度 */
-static const char *fonts[]               = { "Maple Mono NF:style=medium:size=13", "Ubuntu Nerd Font Mono:size=13" };
+static const char *fonts[]               = { "Maple Mono NF:style=medium:size=13", "all-the-icons:size=13" };
 /*
 static const char black[]       = "#21222C";
 static const char white[]       = "#f8f8f2";
@@ -45,7 +45,7 @@ static const char *colors[][3]           = {          /* 颜色设置 ColFg, Col
     [SchemeSel] = { "#282a36", "#bd93f9", "#bd93f9" },
     [SchemeSelGlobal] = { "#f1fa8c", "#21222C", "#f1fa8c" },
     [SchemeHid] = { "#304050", "#21222c", NULL },
-    [SchemeSystray] = { NULL, "#21222c", NULL },
+    [SchemeSystray] = { NULL, "#582589", NULL },
     [SchemeUnderline] = { "#ff556c", "#ffffff", NULL }, 
     [SchemeNormTag] = { "#bbbbbb", "#21222c", NULL },
     [SchemeSelTag] = { "#ff5555", "#21222C", NULL },
@@ -100,9 +100,9 @@ static const Rule rules[] = {
     { NULL,                  NULL,                "Media viewer",   0,            1,          0,          0,        -1,      0}, // tg图片查看器        浮动
 
     /** 普通优先度 */
-    { NULL,                 "qq",                  NULL,             1 << 8,       0,          0,          1,        -1,      0}, // qq         tag -> ﬄ 无边框
+    { NULL,                 "qq",                  NULL,             1 << 8,       0,          0,          0,        -1,      0}, // qq         tag -> ﬄ 无边框
     {"scratchpad",          "scratchpad",         "scratchpad",      TAGMASK,      1,          1,          0,        -1,      8}, // scratchpad          浮动、全局、无边框 屏幕顶部*/
-    /*{"obs",                  NULL,                 NULL,             1 << 3,       0,          0,          0,        -1,      0}, // obs        tag -> 󰕧*/
+    {"rofi",                  NULL,                 NULL,                  0,       0,          0,          0,        -1,      0}, // obs        tag -> 󰕧
     /*{"chrome",               NULL,                 NULL,             1 << 4,       0,          0,          0,        -1,      0}, // chrome     tag -> */
     /*{"Chromium",             NULL,                 NULL,             1 << 4,       0,          0,          0,        -1,      0}, // Chromium   tag -> */
     /*{"music",                NULL,                 NULL,             1 << 5,       1,          0,          1,        -1,      0}, // music      tag ->  浮动、无边框*/
@@ -131,7 +131,7 @@ static const Layout overviewlayout = { "󰕬",  overview };
 
 /* 自定义布局 */
 static const Layout layouts[] = {
-    { "󰯌",  tile },         /* 主次栈 */
+    { "",  tile },         /* 主次栈 */
     { "󰕰",  magicgrid },    /* 网格   */
 };
 
@@ -151,8 +151,8 @@ static Key keys[] = {
     { MODKEY,              XK_Up,           focusstack,       {.i = -1} },               /* super up           |  本tag内切换聚焦窗口 */
     { MODKEY,              XK_Down,         focusstack,       {.i = +1} },               /* super down         |  本tag内切换聚焦窗口 */
 
-    { MODKEY,              XK_comma,        viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
-    { MODKEY,              XK_period,       viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
+    { MODKEY,              XK_comma,        viewtoleft,       {0} },                     /* super ,            |  聚焦到左边的tag */
+    { MODKEY,              XK_period,       viewtoright,      {0} },                     /* super .            |  聚焦到右边的tag */
     { MODKEY,              XK_Left,         viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
     { MODKEY,              XK_Right,        viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
     { MODKEY|ShiftMask,    XK_Left,         tagtoleft,        {0} },                     /* super shift left   |  将本窗口移动到左边tag */
@@ -160,8 +160,6 @@ static Key keys[] = {
 
     { MODKEY,              XK_Tab,          toggleoverview,   {0} },                     /* super tab          |  显示所有tag 或 跳转到聚焦窗口的tag */
 
-    // { MODKEY,              XK_minus,        viewtoleft,       {0} },                     /* super left         |  聚焦到左边的tag */
-    // { MODKEY,              XK_equal,        viewtoright,      {0} },                     /* super right        |  聚焦到右边的tag */
     { MODKEY,              XK_minus,        setmfact,         {.f = -0.05} },            /* super -            |  缩小主工作区 */
     { MODKEY,              XK_equal,        setmfact,         {.f = +0.05} },            /* super =            |  放大主工作区 */
 
@@ -170,6 +168,7 @@ static Key keys[] = {
 
     { MODKEY,              XK_s,            zoom,             {0} },                     /* super s            |  将当前聚焦窗口置为主窗口 */
 
+    { MODKEY,              XK_a,            togglefloating,   {0} },                     /* super a            |  开启/关闭 聚焦目标的float模式 */
     { MODKEY,              XK_t,            togglefloating,   {0} },                     /* super t            |  开启/关闭 聚焦目标的float模式 */
     { MODKEY|ShiftMask,    XK_t,            toggleallfloating,{0} },                     /* super shift t      |  开启/关闭 全部目标的float模式 */
     { MODKEY,              XK_f,            fullscreen,       {0} },                     /* super f            |  开启/关闭 全屏 */
@@ -214,7 +213,7 @@ static Key keys[] = {
     { MODKEY,              XK_space,  spawn, SHCMD("alacritty --class float") },                                        /* super space      | 打开浮动 alacritty终端      */
     { MODKEY,              XK_e,      spawn, SHCMD("alacritty -e yazi") },                                              /* super e          | 打开浮动 yazi         */
     { MODKEY,              XK_b,      spawn, SHCMD("vivaldi") },                                                        /* super b          | 打开 vivaldi           */
-    { MODKEY,              XK_w,      spawn, SHCMD("rofi -show window") },                                              /* super w          | 打开 rofi window           */
+    { MODKEY,              XK_w,      spawn, SHCMD("rofi -matching prefix -show window -window-match-fields class") },                                              /* super w          | 打开 rofi window           */
     { Mod1Mask,            XK_Tab,    spawn, SHCMD("rofi -show drun")},                                                 /* alt tab          | 打开rofi run           */ 
     { MODKEY,              XK_p,      spawn, SHCMD("~/Scripts/blurlock.sh") },                                          /* super p          | 锁定屏幕               */
     { MODKEY,              XK_m,      spawn, SHCMD("~/Scripts/rofi.sh") },                                              /* super m          | 自定义脚本              */
@@ -225,9 +224,6 @@ static Key keys[] = {
     // { MODKEY|ShiftMask,    XK_Up,     spawn, SHCMD("$DWM/DEF/set_vol.sh up") },                                      /* super shift up   | 音量加                 */
     //{ ControlMask|Mod1Mask,XK_a,      spawn, SHCMD("flameshot gui -c -p ~/Pictures/screenshots") },                   /* super shift a    | 截图                   */
     // { MODKEY,              XK_minus,  spawn, SHCMD("st -c FG") },                                                    /* super -          | 打开全局st终端         */
-    // { MODKEY|ShiftMask,    XK_p,      spawn, SHCMD("/home/shan/Scripts/shutdown.sh") },                              /* super shift p    | poweroff               */
-    // { MODKEY,              XK_d,      spawn, SHCMD("rofi -show run") },                                              /* super d          | rofi: 执行run          */
-    // { MODKEY,              XK_p,      spawn, SHCMD("$DWM/DEF/rofi.sh") },                                            /* super p          | rofi: 执行自定义脚本   */
     // { MODKEY,              XK_s,      togglescratch, SHCMD("st -t scratchpad -c float") },                           /* super s          | 打开scratch终端        */
 
 

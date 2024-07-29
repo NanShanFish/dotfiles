@@ -1,0 +1,6 @@
+
+export _bat='^sbat^^c#ffffff^^b#03acff0x88^ 󰢟 ^c#ffffff^^b#03acff0x99^ 0% '
+export _wifi='^swifi^^c#ffffff^^b#d44b3a0x88^  ^c#ffffff^^b#d44b3a0x99^ Home '
+export _cpu='^scpu^^c#ffffff^^b#fb865c0x88^  ^c#ffffff^^b#fb865c0x99^ 01%  '
+export _mem='^smem^^c#69450a^^b#fdc76f0x88^ 󱕎 ^c#69450a^^b#fdc76f0x99^ 03% '
+export _date='^sdate^^c#25513e^^b#00ff900x88^  ^c#25513e^^b#00ff900x99^ 07/29 10:56 '
