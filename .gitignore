@@ -1,0 +1,11 @@
+__pycache__
+.clj-kondo/
+.lsp/
+dist/
+
+fish_frozen_theme.fish
+fish_variables
+
+node_modules
+
+/pkgs/nvim/nvim/

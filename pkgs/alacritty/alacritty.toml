@@ -1,0 +1,42 @@
+[general]
+live_config_reload = false
+import = [ "./theme.toml" ]
+
+[env]
+TERM = "xterm-256color"
+
+[scrolling]
+history = 1000
+
+[font]
+normal = { family = "@@font@@", style = "Medium"}
+size = 13
+
+[cursor]
+style = { shape = "beam", blinking = "Never"}
+
+[[hints.enabled]]
+post_processing = true
+action = "Copy"
+persist = false
+mouse.enabled = false
+binding = { key = ".", mods = "Control" }
+regex = "((?:[.\\pL\\pN_\\-@~]+)?(?:/+[.\\pL\\pN_\\-@]+)+)"
+
+[[hints.enabled]]
+command = "xdg-open" # 在 Linux/BSD 上打开链接
+# command = "open" # 在 macOS 上打开链接
+# command = { program = "cmd", args = ["/c", "start", ""] } # 在 Windows 上打开链接
+hyperlinks = true
+post_processing = true
+persist = false
+mouse.enabled = true
+binding = { key = ",", mods = "Control" }
+regex = "(ipfs:|ipns:|magnet:|mailto:|gemini://|gopher://|https://|http://|news:|file:|git://|ssh:|ftp://)[^\u0000-\u001F\u007F-\u009F<>\"\\s{-}\\^⟨⟩`\\\\]+"
+
+[keyboard]
+bindings = [
+	{ key = "Space", mods = "Control|shift", action = "ToggleViMode" },
+	{ key = "[", mods = "Control", action = "ScrollHalfPageUp" },
+	{ key = "]", mods = "Control", action = "ScrollHalfPageDown" },
+]

@@ -1,0 +1,455 @@
+#!/usr/bin/env python
+
+# {{{
+import os
+import re
+from re import Pattern
+from datetime import date as dt_date, timedelta
+from datetime import time as dt_time
+from datetime import datetime
+import sys
+from typing import Callable
+
+def get_dir_org_files(dir_path: str) -> list[str]:
+    if not os.path.isdir(dir_path):
+        return []
+
+    return [os.path.join(dir_path, file) for file in os.listdir(dir_path) if file.endswith("org")]
+
+def trans2num(date: dt_date) -> int:
+    return date.year * 12 + date.month
+
+def trans2date(date_num: int) -> dt_date:
+    year, month = divmod(date_num, 12)
+    return dt_date(year, month, 1)
+
+def get_recent_diary_files(
+        dairy_path_format: str,
+        base_date: dt_date
+        ) -> list[str]:
+    diary_files: list[str] = []
+    first_day_of_month_num = trans2num(base_date)
+    for i in [0, -1]:
+        tar_date: dt_date = trans2date(first_day_of_month_num + i)
+        tar_dir: str = tar_date.strftime(os.path.dirname(dairy_path_format))
+
+        diary_files.extend(get_dir_org_files(tar_dir))
+
+    return diary_files# }}}
+
+class CONFIG:
+    NOTES_DIR: str = str(Path("@@doc_path@@") / "notes") # {{{
+    DAIRY_DIR: str = os.path.join(NOTES_DIR, '2-daily')
+    TODO_DIR: str  = os.path.join(DAIRY_DIR, 'Todo')# }}}
+    DAIRY_FORMAT: str = os.path.join(DAIRY_DIR, '%Y/%m/%Y-%m-%d.org')
+
+    BASE_TIME: datetime = datetime.now()
+    TO: dt_date = BASE_TIME.date() + timedelta(6)
+    AGENDA_FILES = get_dir_org_files(TODO_DIR) + get_recent_diary_files(DAIRY_FORMAT, BASE_TIME.date())
+    NEED_ARCHIVE_FILES = get_dir_org_files(TODO_DIR)
+
+    DEADLINE_DEFAULT_OFFSET: int = 14
+
+    MODEL = 'deepseek-v4-flash'
+    OPENAI_URL = "https://api.deepseek.com"
+
+    YEAR_EVENT_BASE = os.path.join(NOTES_DIR, '5-other/birth_base.md')
+    YEAR_EVENT_FILE = os.path.join(TODO_DIR, 'birth.org')
+
+debug = print
+
+class TaskTime:
+    def __init__(
+            self,
+            date: dt_date,
+            time: dt_time | None,
+            ) -> None:
+        self.date: dt_date = date
+        self.time: dt_time | None = time
+
+class Deadline:
+    def __init__(
+            self,
+            date: dt_date,
+            time: dt_time | None,
+            delta: timedelta,
+            ) -> None:
+        self.date: dt_date = date
+        self.time: dt_time | None = time
+        self.remind_date: dt_date = date - delta
+
+
+class Task:
+    def __init__(
+            self,
+            title: str,
+            chunk: str,
+            scheduled: TaskTime | None,
+            deadline: Deadline | None,
+            diary_entry: TaskTime | None,
+            ) -> None:
+        self.title:         str      = title
+        self.chunk:         str      = chunk
+        self.scheduled:     TaskTime | None = scheduled
+        self.deadline:      Deadline | None = deadline
+        self.diary_entry:   TaskTime | None = diary_entry
+
+
+def do_for_chunk(pattern: Pattern[str], file_path: str, func: Callable[[str, str], None]) -> None:
+    with open(file_path, 'r') as f:
+        content = f.read()
+        for match in pattern.finditer(content):
+            func(match.group(0).strip(), match.group(1).strip())
+def get_task(
+        filter: Callable[[Task],bool],
+        todo_files: list[str],
+        post_processing: Callable[[Task], Task] | None = None,
+        ) -> list[Task]:
+    org_chunk_re: Pattern[str] = re.compile(
+            r'\*+ ([^\n]+).*?(?=\n\*+|\Z)', re.M |re.S
+            )
+    org_task_re: Pattern[str] = re.compile(
+            r'([_A-Z:]*)?\s*<(20\d{2}-\d{2}-\d{2})([^>]*)>'
+            )
+    time_re: Pattern[str] = re.compile(
+            r'\d{2}:\d{2}'
+            )
+    offset_re: Pattern[str] = re.compile(
+            r' -(\d{1,2})([dwmyDWMY])'
+            )
+    
+    res: list[Task] = []
+
+
+    _delta_dict = { 'd': 1, 'w': 7, 'm': 30, 'y': 365 }
+    def find_task(chunk: str, title: str) -> None:
+        scheduled = None
+        deadline = None
+        diary_entry = None
+
+        for match in org_task_re.finditer(chunk):
+            other_txt, before_txt, date_str = match.group(3), match.group(1), match.group(2)
+            time_match = time_re.search(other_txt)
+            time_str = time_match.group(0) if time_match else None
+
+            try:
+                date_: dt_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                time_: dt_time | None = datetime.strptime(time_str, "%H:%M").time() if time_str else None
+                if before_txt == 'SCHEDULED:':
+                    scheduled = TaskTime(date_, time_)
+                elif before_txt == 'DEADLINE:':
+                    offset_match = offset_re.search(other_txt)
+                    if offset_match:
+                        offset_num, offset_unit = int(offset_match.group(1)), offset_match.group(2)
+                        offset = timedelta(days=offset_num * _delta_dict[offset_unit.lower()])
+                    else:
+                        offset = timedelta(days=CONFIG.DEADLINE_DEFAULT_OFFSET)
+                    deadline = Deadline(date_, time_, offset)
+                else:
+                    diary_entry = TaskTime(date_, time_)
+            except:
+                continue
+        if not scheduled and not deadline and not diary_entry:
+            return
+        t = Task( title, chunk, scheduled, deadline, diary_entry )
+        if filter(t):
+            if post_processing:
+                t = post_processing(t)
+            res.append(t)
+
+    for file in todo_files:
+        do_for_chunk(org_chunk_re, file, find_task)
+    return res
+
+def render(task_list: list[Task], now: datetime, to: dt_date) -> None:
+    today = now.date()
+    time = now.time()
+
+    def sort_key(time: dt_time | None, date: dt_date, remind_date: dt_date, index: int) -> tuple[dt_date, int, dt_date, int, dt_time, int]:
+        is_full_day = 0 if time else 1
+        if is_full_day:
+            time = dt_time.max
+        is_not_today = 0 if date == today else 1
+        sk_remind_date = today if remind_date < today else remind_date
+
+        return (sk_remind_date, is_not_today, date, is_full_day, time, index)
+
+    def generate_neo_list(task_list: list[Task]) -> list[tuple[dt_date, int, dt_date, int, dt_time, int]]:
+        res = []
+        for i in range(len(task_list)):
+            if task_list[i].scheduled and task_list[i].scheduled.date <= to:
+                res.append(sort_key(
+                    task_list[i].scheduled.time,
+                    task_list[i].scheduled.date,
+                    task_list[i].scheduled.date,
+                    i
+                    ))
+            if task_list[i].deadline:
+                if task_list[i].deadline.remind_date <= today:
+                    res.append(sort_key(
+                        task_list[i].deadline.time,
+                        task_list[i].deadline.date,
+                        task_list[i].deadline.remind_date,
+                        i
+                        ))
+                    t = task_list[i]
+                if task_list[i].deadline.date <= to:
+                    res.append(sort_key(
+                        task_list[i].deadline.time,
+                        task_list[i].deadline.date,
+                        task_list[i].deadline.date,
+                        i
+                        ))
+                    t = task_list[i]
+
+            if task_list[i].diary_entry and \
+                    task_list[i].diary_entry.date >= today and task_list[i].diary_entry.date <= to:
+                res.append(sort_key(
+                    task_list[i].diary_entry.time,
+                    task_list[i].diary_entry.date,
+                    task_list[i].diary_entry.date,
+                    i
+                    ))
+        return res
+
+    neo_list = sorted(generate_neo_list(task_list))
+
+    WEEK_DAY = ["一", "二", "三", "四", "五", "六", "日"]
+    def str_title(date: dt_date) -> str:
+        weekday = WEEK_DAY[date.weekday()]
+        return date.strftime("%y/%m/%d") + '(' + weekday + ')'
+
+
+    has_print_time = False
+    idx = 0
+    last_date = today - timedelta(1)
+    while idx < len(neo_list) and neo_list[idx][0] <= today:
+        if idx == 0:
+            print(str_title(today))
+            last_date = today
+        if not neo_list[idx][1]:
+            if not neo_list[idx][3]:
+                if not has_print_time and neo_list[idx][4] > time:
+                    print(f"  [{time.strftime('%H:%M')}] <-- now")
+                    has_print_time = True
+                print(f"  [{neo_list[idx][4].strftime('%H:%M')}] {task_list[neo_list[idx][5]].title}")
+            else:
+                print(f"  [全天] {task_list[neo_list[idx][5]].title}")
+        else:
+            delta_days = (neo_list[idx][2] - today).days
+            if delta_days < 0:
+                print(f"  [Sched {-1 * delta_days} x] {task_list[neo_list[idx][5]].title} {neo_list[idx][1]}")
+            else:
+                print(f"  [In {delta_days} d.] {task_list[neo_list[idx][5]].title}")
+        idx += 1
+
+    for i in range(idx, len(neo_list)):
+        delta_days: int = (neo_list[i][2] - last_date).days
+        if delta_days <= 1:
+            if last_date != neo_list[i][2]:
+                print(str_title(neo_list[i][2]))
+        else:
+            if delta_days == 2:
+                print(str_title(last_date + timedelta(1)))
+            else:
+                print(str_title(last_date + timedelta(1)) + ' ... ' + str_title(neo_list[i][2] - timedelta(1)))
+            print(str_title(neo_list[i][2]))
+        if not neo_list[i][3]:
+            print(f"  [{neo_list[i][4].strftime('%H:%M')}] {task_list[neo_list[i][5]].title}")
+        else:
+            print(f"  [全天] {task_list[neo_list[i][5]].title}")
+        last_date = neo_list[i][2]
+    delta_days = (to - last_date).days
+    if delta_days == 1:
+        print(str_title(to))
+    elif delta_days > 1:
+        print(str_title(last_date + timedelta(1)) + ' ... ' + str_title(to))
+
+def post_processing(t: Task) -> Task:
+    if t.title.startswith("TODO "):
+        t.title = t.title[5:]
+    t.chunk = ''
+    return t
+
+def filter_TODO_task(t: Task) -> bool:
+    if t.title.startswith("DONE "):
+        return False
+    return True
+
+def filter_todo_by_date(t: Task, base_date: dt_date, to: dt_date) -> bool:
+    if t.scheduled and t.scheduled.date <= to:
+        return True
+    if t.deadline and t.deadline.remind_date <= base_date:
+        return True
+    if t.diary_entry and t.diary_entry.date >= base_date and t.diary_entry.date <= to:
+        return True
+    return False
+
+def archive(_from: list[str]):
+    first_chunk_re = re.compile(
+            r'\* ([^\n]+).*?(?=\n\* |\Z)'
+            ,re.M | re.S
+            )
+    create_at_re: Pattern[str] = re.compile(
+            r'CREATE_AT:\s*\[(20\d{2}-\d{2}-\d{2})'
+            )
+    closed_at_re: Pattern[str] = re.compile(
+            r'CLOSED:\s*\[(20\d{2}-\d{2}-\d{2})'
+            )
+    done_tasks: dict[str, list[str]] = {}
+    for file in _from:
+        new_content: list[str] = []
+        def func(chunk: str, title: str) -> None:
+            if not title.startswith("DONE "):
+                new_content.append(chunk)
+                return
+            for pattern in [closed_at_re, create_at_re]:
+                match = pattern.search(chunk)
+                if match:
+                    date_str = match.group(1)
+                    date = datetime.strptime(date_str, "%Y-%m-%d")
+                    tar_file = date.strftime(CONFIG.DAIRY_FORMAT)
+                    if tar_file not in done_tasks:
+                        done_tasks[tar_file] = []
+                    done_tasks[tar_file].append('*' + chunk)
+                    return
+            new_content.append(chunk)
+        do_for_chunk(first_chunk_re, file, func)
+        with open(file, 'w') as f:
+            _ = f.write('\n'.join(new_content))
+    for tar_file, dones in done_tasks.items():
+        new_content = []
+        flag = 0
+        if os.path.exists(tar_file):
+            with open(tar_file, 'r') as f:
+                content = f.read()
+                for match in first_chunk_re.finditer(content):
+                    title, chunk = match.group(1), match.group(0).strip()
+                    if title == 'Archived' and flag == 0:
+                        chunk += '\n' + '\n'.join(dones)
+                        flag = 1
+                    new_content.append(chunk)
+        if flag == 0:
+            new_content.append('* Archived\n' + '\n'.join(dones))
+        with open(tar_file, 'w+') as f:
+            _ = f.write('\n'.join(new_content))
+
+def quit_with(s: str):
+    sys.stderr.write("Error:" + s)
+    exit(1)
+
+def ai_suggest(base_time: datetime, to: dt_date) -> None:
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        quit_with("未设置 OPENAI_API_KEY 环境变量")
+
+    from openai import OpenAI
+    tasklist = get_task(
+        lambda t: filter_TODO_task(t) and filter_todo_by_date(t, base_time.date(), to)
+        , CONFIG.AGENDA_FILES
+        )
+    prompt = f"""你是一个贴心、精炼的私人助理。请查看我的待办任务，以朋友般温和、鼓励的语气，给出 1 到 3 条最核心的执行建议（如果没有好建议，直接返回空）。
+
+为了保证视觉上清晰好读，请严格遵守以下【排版与约束】：
+1. 必须使用 Markdown 的粗体短语作为每条建议的开头（格式如：**【核心关注点】**），然后顺着往下说。
+2. 绝对不要使用数字编号（如 1., 2., 3.），每条建议独立成段，总共不要超过 3 段。
+3. 每段话请严格控制在 2-3 句话以内，直接给具体可行的干货，拒绝长篇大论和无意义的客套。
+4. 不要评价任务本身。
+
+当前时间：{base_time.strftime('%Y-%m-%d %H:%M')}，星期{['一','二','三','四','五','六','日'][base_time.weekday()]}。
+任务列表：
+{chr(10).join([ t.chunk for t in tasklist])}
+
+回复格式示例：
+**【这里是关注点 A】** 这里是结合当前时间和任务内容给出的第一条具体建议，用温和的语气写两句话。
+**【这里是关注点 B】** 这里是针对另一个任务或合并视角的第二条具体建议，同样简明扼要。
+"""
+    client = OpenAI(
+            api_key=api_key,
+            base_url=CONFIG.OPENAI_URL
+            )
+    response = client.chat.completions.create(
+        model=CONFIG.MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,
+    )
+    if response.choices[0].message.content:
+        print(response.choices[0].message.content.strip(), end='\n\n')
+    render(tasklist, base_time, to)
+
+
+
+def parse_event_file(input_file_path: str) -> list[tuple[str, datetime]]:
+    from zhdate import ZhDate
+    if not os.path.exists(input_file_path):
+        quit_with("invalid file path")
+
+    now = datetime.now()
+
+    DATE_PATTERN = re.compile(r'^([*-])\s*(.*?)\s*(\d+),(\d+)$')
+
+    event_list: list[tuple[str, datetime]] = []
+
+    with open(input_file_path, encoding='utf-8') as birth_file:
+        for line in birth_file:
+            match = re.match(DATE_PATTERN, line)
+            if not match: continue
+            groups = match.groups()
+            month = int(groups[2])
+            day = int(groups[3])
+            if groups[0] == '-':
+                time = ZhDate(now.year, month, day).to_datetime()
+                if time < now:
+                    time = ZhDate(now.year + 1, month, day).to_datetime()
+            else:
+                time = datetime(now.year, month, day)
+                if time < now:
+                    time = datetime(now.year + 1, month, day)
+            event_list.append((groups[1], time))
+    return event_list
+
+def renew_birth_file() -> None:
+    import hashlib
+    def get_file_hash(filename: str):
+        hash_sha256 = hashlib.sha256()
+        try:
+            with open(filename, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_sha256.update(chunk)
+            return hash_sha256.hexdigest()
+        except FileNotFoundError:
+            return None
+    input_file = CONFIG.YEAR_EVENT_BASE
+    output_file = CONFIG.YEAR_EVENT_FILE
+
+    event_list = parse_event_file(input_file)
+    event_list.sort(key=lambda x: x[1])
+    new_content = '\n'.join([ "* {}\nDEADLINE: <{}-{:02}-{:02}>".format(event, birth.year, birth.month, birth.day) for (event, birth) in event_list ])
+
+    new_content_hash = hashlib.sha256(new_content.encode('utf-8')).hexdigest()
+    old_file_hash = get_file_hash(output_file)
+
+    if old_file_hash != new_content_hash:
+        with open(output_file, mode = 'w', encoding='utf-8') as of:
+            _ = of.write(new_content)
+        print("Complete: update success")
+    else:
+        print("Complete: dont need update")
+
+if __name__ == '__main__':
+    if '-a' in sys.argv or '--archive' in sys.argv:
+        archive(CONFIG.NEED_ARCHIVE_FILES)
+    elif '-s' in sys.argv or '--suggest' in sys.argv:
+        ai_suggest(CONFIG.BASE_TIME, CONFIG.TO)
+    elif '-r' in sys.argv or '--renew' in sys.argv:
+        archive([CONFIG.YEAR_EVENT_FILE])
+        renew_birth_file()
+    else:
+        base_time = CONFIG.BASE_TIME
+        today = base_time.date()
+        task_list = get_task(
+                filter_TODO_task,
+                CONFIG.AGENDA_FILES,
+                post_processing
+                )
+        render(task_list, base_time, CONFIG.TO )

@@ -1,0 +1,56 @@
+#!/bin/bash
+
+doc_path="@@doc_path@@"
+verify() {
+    if ! which ndate &> /dev/null; then
+        exit 1
+    fi
+}
+
+create-file(){
+    file_path="$doc_path/$1"
+    if [[ ! -e "$file_path" ]]; then
+        daily_dir=$(dirname $file_path)
+        if [[ ! -d "$daily_dir" ]]; then
+            mkdir -p "$daily_dir"
+        fi
+        touch "$file_path"
+    fi
+    cd $doc_path/notes
+    if [ -z "$2" ]; then
+        nvim $file_path
+    else
+        echo $file_path
+    fi
+}
+
+open() {
+    if [ "$1" = "todo" ]; then
+        f="notes/2-daily/Todo/todo.org"
+        nvim "$doc_path/$f"
+        return
+    elif [ -z "$1" ]; then
+        f="$(date "+notes/2-daily/%Y/%m/%Y-%m-%d.org")"
+    else
+        f="$(ndate "$1" -f "notes/2-daily/%Y/%m/%Y-%m-%d.org")"
+    fi
+
+    create-file $f $2
+}
+
+helpfunc() {
+    echo "NAME"
+    echo -e "\tjy - Open the diary for a specified date\n"
+    echo "OPTIONS"
+    echo -e "\tjy"
+    echo -e "\t\tOpen today diary\n"
+    echo -e "\tjy [relative date]"
+    echo -e "\t\tOpen the diary relative to today.\n\t\tE.g., jy -3 (3 days ago), jy 3 (3 days later)\n"
+    echo -e "\tjy [MM-DD]"
+    echo -e "\t\tOpen the diary for the nearest occurrence of that day.\n\t\tE.g., jy 09-05\n"
+    echo -e "\tjy [YYYY-MM-DD]"
+    echo -e "\t\tOpen the diary for the specified date.\n\t\tE.g., jy 24-11-03\n"
+}
+
+verify $1
+open $1 $2

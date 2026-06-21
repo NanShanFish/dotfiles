@@ -1,0 +1,56 @@
+[mgr]
+ratio        = [1,2,4]
+show_symlink = false
+
+[preview]
+tab_szie      = 2
+max_width     = 600
+max_height    = 900
+
+[opener]
+edit = [
+	{ run = 'nvim %s', block = true },
+]
+extract = [
+	{ run = 'ouch d -y %s', orphan = true, desc = "Extract here with ouch", for = "unix" },
+]
+browser = [
+	{ run = 'vivaldi %s', orphan = true, desc = "open in browser", for = "unix"},
+]
+vscode = [
+	{ run = 'code %s', orphan = true, desc = "open with vscode", for = "unix"},
+]
+play = [
+	{ run = 'mpv %1', orphan = true, desc = "use mpv play", for = "unix"},
+]
+img_play = [
+	{ run = 'feh %s', orphan = true, desc = "play in feh", for = "unix" }
+]
+fallback = [
+	{ run = 'xdg-open %s', orphan = true, desc = "xdg-open" , for = "unix" },
+]
+
+[open]
+rules = [
+	{ mime = "text/html", use = [ "browser","vscode"] },
+	{ url = "*.code-workspace", use = [ "vscode","edit" ] },
+	{ mime = "application/zip", use = "extract" },
+	{ mime = "text/*", use = [ "edit", "vscode" ] },
+	{ mime = "image/*", use = "img_play"},
+	{ mime = "video/*", use = "play" },
+	{ mime = "inode/empty",use = "edit"},
+
+	{ url = "*", use = ["fallback","edit"] }
+]
+
+[plugin]
+prepend_previewers = [
+	{ mime = "application/*zip",            run = "ouch" },
+	{ mime = "application/x-tar",           run = "ouch" },
+	{ mime = "application/x-bzip2",         run = "ouch" },
+	{ mime = "application/x-7z-compressed", run = "ouch" },
+	{ mime = "application/x-rar",           run = "ouch" },
+	{ mime = "application/x-xz",            run = "ouch" },
+	{ url = "*.pdf", run = "noop"},
+	{ mime = "image/*", run = "noop"},
+]

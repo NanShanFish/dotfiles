@@ -1,0 +1,25 @@
+#!/usr/bin/bash
+
+if [ $# -eq 0 ]; then
+    $EDITOR
+    exit
+fi
+
+if [ -e "$1" ]; then
+    if [ -d "$1" ]; then
+        target_dir="$1"
+    else
+        target_dir="$(dirname $1)"
+    fi
+    proj_dir="$(git -C $target_dir rev-parse --show-toplevel 2> /dev/null)"
+    if [ -z "$proj_dir" ]; then
+        echo "file not in a git repo"
+        $EDITOR "$@"
+    else
+        file_path=$(realpath --relative-to=$proj_dir $1)
+        cd "$proj_dir"
+        $EDITOR "$file_path"
+    fi
+else
+    $EDITOR "$@"
+fi
