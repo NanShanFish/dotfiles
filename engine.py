@@ -1,40 +1,41 @@
-#!/usr/bin/env python# {{{
+#!/usr/bin/env python
+# {{{
 
 import argparse
 import sys
+from functools import partial
 from pathlib import Path
 import importlib.util
 
 from utils import (
-    fill_template_list,
-    generate_and_check_files_list,
-    generate_and_check_template_files_list,
-    check_content,
     os_type,
     distro,
-    Context,
-    PackageConfig,
-    run_remove,
 )
+from utils.model import Context, PackageConfig
+from utils.file_produce import link_items, pre_check, stow, func, unstow_check, unstow_post_processing, unstow_template
 # }}}
+
 global_ctx: Context = {
-    "home_dir": Path.home(),
-    "config_home": Path.home() / ".config",
     "os_type": os_type,
     "distro": distro,
     "offset_dir": "dist",
-    "doc_path": Path("/mnt/a/doc"),
-    "dot_path": Path(__file__).resolve().parent,
-    "dls_path": Path.home() / "dls",
+    "paths": {
+        "home": str(Path.home()),
+        "config_home": str(Path.home() / ".config"),
+        "doc_dir": "/mnt/a/doc",
+        "dot_dir": str(Path.home / "dot"),
+        "dls_dir": str(Path.home() / "dls"),
+        "root": "/"
+    }
 }
 
-def discover_packages(pkgs_dir: Path) -> list[str]:
+def discover_packages(pkgs_dir: Path) -> set[str]:# {{{
     """扫描 pkgs_dir 下所有包含 config.py 的子目录，返回包名列表"""
-    packages = []
+    packages = set()
     if pkgs_dir.is_dir():
         for child in pkgs_dir.iterdir():
-            if child.is_dir() and (child / "config.py").exists():
-                packages.append(child.name)
+            if child.is_dir():
+                packages.add(child.name)
     return packages
 
 def load_packages_with_deps(package_names: list[str], ctx: Context) -> dict[str, PackageConfig]:
@@ -49,8 +50,7 @@ def load_packages_with_deps(package_names: list[str], ctx: Context) -> dict[str,
 
         script_path = Path(f"pkgs/{pkg}/config.py")
         if not script_path.exists():
-            print(f":: error: required package '{pkg}' not found in pkgs/")
-            sys.exit(1)
+            continue
 
         # 动态导入模块
         spec = importlib.util.spec_from_file_location("pkg_config", script_path)
@@ -81,137 +81,164 @@ def compute_execution_order(graph: dict, targets: list[str]) -> list[str]:
     resolved = []
     for target in targets:
         topo_sort(resolved, graph, target)
-    return resolved
-
-def run_lifecycle(pkg_meta: PackageConfig, base_dir: Path, ctx: Context,
-                  force_all: bool = False, force_link: bool = False) -> None:
-    print(f":: processing {pkg_meta['name']}...")
-
-    if pkg_meta.get("pre_check") and not pkg_meta["pre_check"]():
-        return
-
-    if pkg_meta.get("pre_process"):
-        pkg_meta["pre_process"]()
-
-    tar_dir = pkg_meta.get("tar_dir")
-    offset_dir = ctx["offset_dir"]
-
-    file_list = generate_and_check_files_list(
-        pkg_meta.get("files", []), base_dir, tar_dir,
-        delete_when_exists=force_all,
-        delete_when_symlink=force_link or force_all   # -F 自动包含 -f
-    )
-    temp_list = generate_and_check_template_files_list(
-        pkg_meta.get("template_files", []), base_dir, tar_dir, offset_dir,
-        delete_when_exists=force_all,
-        delete_when_symlink=force_link or force_all
-    )
-
-    fill_template_list(temp_list, ctx)
-
-    # 此时所有冲突已在生成函数中处理完毕，直接创建符号链接
-    for lst in [file_list, temp_list]:
-        for l in lst:
-            l["dst"].parent.mkdir(parents=True, exist_ok=True)
-            if l["dst"].exists():
-                continue
-            print(f"   [link] {l['src']} -> {l['dst']}")
-            l["dst"].symlink_to(l["src"])
-
-    if pkg_meta.get("post_process"):
-        pkg_meta["post_process"]()
-
-def run_check(pkg_meta: PackageConfig, base_dir: Path, ctx: Context) -> None:
-    """仅执行检查：生成文件列表（不安装），然后调用 check_content 交互式比对模板"""
-    print(f":: checking {pkg_meta['name']}...")
-
-    tar_dir = pkg_meta.get("tar_dir")
-    offset_dir = ctx["offset_dir"]
-
-    # 只生成模板文件列表用于检查
-    temp_list = generate_and_check_template_files_list(
-        pkg_meta.get("template_files", []), base_dir, tar_dir, offset_dir
-    )
-
-    # file_list = generate_and_check_files_list(
-    #     pkg_meta.get("files", []), base_dir, tar_dir
-    # )
-
-    check_content(temp_list, ctx)   # check_content 在 utils 中实现
+    return resolved# }}}
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Dotfiles package manager")
-    parser.add_argument("-c", "--check", action="store_true",
-                        help="Check installed files for modifications instead of installing")
-    parser.add_argument("-d", "--remove", action="store_true",
-                        help="Remove installed packages (delete symlinks and generated files)")
-    parser.add_argument("--all", action="store_true",
-                        help="Process all packages found in pkgs/")
-    parser.add_argument("-F", "--force-all", action="store_true",
-                        help="Force overwrite/delete ANY existing files, directories or symlinks (with confirmation)")
-    parser.add_argument("-f", "--force-link", action="store_true",
-                        help="Force overwrite/delete existing symlinks only")
-    parser.add_argument("packages", nargs="*",
-                        help="Specific packages to process (ignored if --all is given)")
+    parser = argparse.ArgumentParser(
+        description="Deploy and manage dotfiles/templates."
+    )
+
+    # 位置参数：通用目标列表（创建/检查/删除时为包名，添加时为路径）
+    parser.add_argument(
+        "pkgs", nargs="*", metavar="TARGET",
+        help="Package names (or paths when -a is used)"
+    )
+
+    # 互斥模式选择（不再带参数）
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "-c", "--check", action="store_true",
+        help="Check templates for specified packages"
+    )
+    mode.add_argument(
+        "-a", "--add", action="store_true",
+        help="Add specified paths (stow)"
+    )
+    mode.add_argument(
+        "-d", "--delete", action="store_true",
+        help="Delete (unstow) specified packages"
+    )
+
+    # 全局选项
+    parser.add_argument(
+        "--all", action="store_true",
+        help="Apply to all packages/paths (ignores explicit list)"
+    )
+
+    # 创建模式专属的文件存在行为（互斥）
+    create_group = parser.add_argument_group("Create mode options (default)")
+    create_ex = create_group.add_mutually_exclusive_group()
+    create_ex.add_argument(
+        "-i", "--ignore-exists", action="store_true",
+        help="Skip if destination already exists"
+    )
+    create_ex.add_argument(
+        "-f", "--force-link", action="store_true",
+        help="Update symlink if destination is a link"
+    )
+    create_ex.add_argument(
+        "-F", "--force-delete", action="store_true",
+        help="Prompt to delete existing file before creating"
+    )
+
     return parser.parse_args()
 
 
+from utils.file_produce import get_predef_folder_under_pkg, collect_files
+from utils.sim_func import dot_replace, file_exists
+def create(
+        pkg_list: list[str],
+        ctx: Context,
+        dot_dir: Path,
+        level: int,
+        ):
+    f_ = partial(func, ctx=ctx, level=level, check=pre_check)
+    for pkg in pkg_list:
+        print(f":: processing {pkg}...")
+        lst = get_predef_folder_under_pkg(pkg, dot_dir, ctx)
+        for item in lst:
+            src = item['src']
+            dst = item['dst']
+            neo_lst = collect_files(src, dst, dot_replace, f_ )
+            link_items(neo_lst)
+
+def check(
+        pkg_list: list[str],
+        ctx: Context,
+        dot_dir: Path
+        ):
+    f_ = partial(func, ctx=ctx, level=0, check=lambda p,p2,i: False)
+    for pkg in pkg_list:
+        lst = get_predef_folder_under_pkg(pkg, dot_dir, ctx)
+        for item in lst:
+            src = item['src']
+            dst = item['dst']
+            _ = collect_files(src, dst, dot_replace, f_ )
+
+def unstow(
+        pkg_list: list[str],
+        ctx: Context,
+        dot_dir: Path,
+        ):
+    f_ = partial(func, ctx=ctx, level=0, check=unstow_check, template_callback=unstow_template)
+    for pkg in pkg_list:
+        lst = get_predef_folder_under_pkg(pkg, dot_dir, ctx)
+        for item in lst:
+            src = item['src']
+            dst = item['dst']
+            _ = collect_files(src, dst, dot_replace, f_ )
+            unstow_post_processing(src, dst)
+
 
 def main():
+    # 检查预定义路径是否存在
+    for key, value in global_ctx["paths"].items():
+        if not file_exists(Path(value)):
+            raise ValueError(f"{key}:{value} defined in paths does not exist")
+
     args = parse_args()
-    all_packages = set(discover_packages(Path("pkgs")))
+    dot_path = Path(global_ctx["paths"]["dot_dir"])
+    pkgs_path = dot_path / "pkgs"
+
+    # 添加模式：目标列表是路径
+    if args.add:
+        paths = [Path(s) for s in args.pkgs]
+        for p in paths:
+            if not p.exists():
+                raise ValueError(f"Path does not exist: {p}")
+        stow(paths, global_ctx, dot_path)
+        return
+
+    # 确定模式与包名列表
+    if args.check:
+        mode = 'check'
+    elif args.delete:
+        mode = 'delete'
+    else:
+        mode = 'create'
+
+    raw_targets = args.pkgs
+    all_packages = discover_packages(pkgs_path)
 
     if args.all:
-        packages = discover_packages(Path("pkgs"))
-        if not packages:
-            print("No packages found in pkgs/ directory.")
-            sys.exit(1)
-    else:
-        packages = [Path(pkg).name for pkg in args.packages]
-        if not packages:
-            print("No packages specified. Use positional arguments or --all.")
-            sys.exit(1)
-
-    # ---------- 移除包的分支 ----------
-    if args.remove:
-        for pkg_name in packages:
-            try:
-                pkg_graph = load_packages_with_deps([pkg_name], global_ctx)
-                pkg_meta = pkg_graph.get(pkg_name)
-                if not pkg_meta:
-                    print(f":: error: package '{pkg_name}' not found")
-                    continue
-                base_dir = global_ctx['dot_path'] / f"pkgs/{pkg_name}"
-                run_remove(pkg_meta, base_dir, global_ctx,
-                           force_all=args.force_all,
-                           force_link=args.force_link)
-            except ValueError as e:
-                print(str(e))
-        sys.exit(0)
-
-    # ---------- 正常安装/检查 ----------
-    pkg_graph = load_packages_with_deps(packages, global_ctx)
-    exec_order = compute_execution_order(pkg_graph, packages)
-
-    missing_packages = set(exec_order) - all_packages
-    if missing_packages:
-        print(f":: error: missing packages: {missing_packages}")
+        raw_targets = list(all_packages)
+    elif not raw_targets:
+        print("Error: No targets specified. Use packages or --all.", file=sys.stderr)
         sys.exit(1)
 
-    for pkg_name in exec_order:
-        base_dir = global_ctx['dot_path'] / f"pkgs/{pkg_name}"
-        pkg_meta = pkg_graph[pkg_name]
+    graph = load_packages_with_deps(raw_targets, global_ctx)
+    exec_order = compute_execution_order(graph, raw_targets)
+    missing = set(exec_order) - all_packages
+    if missing:
+        print(f"Info: packages not found, skipped: {', '.join(sorted(missing))}")
 
-        try:
-            if args.check:
-                run_check(pkg_meta, base_dir, global_ctx)
-            else:
-                run_lifecycle(pkg_meta, base_dir, global_ctx,
-                              force_all=args.force_all,
-                              force_link=args.force_link)
-        except ValueError as e:
-            print(str(e))
+    if mode == 'create':
+        level = 0
+        if args.ignore_exists:
+            level = 1
+        elif args.force_link:
+            level = 2
+        elif args.force_delete:
+            level = 3
+        create(exec_order, global_ctx, dot_path, level)
+    elif mode == 'check':
+        check(exec_order, global_ctx, dot_path)
+    elif mode == 'delete':
+        unstow(exec_order, global_ctx, dot_path)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ValueError as e:
+        print(str(e))

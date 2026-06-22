@@ -38,7 +38,7 @@ def get_recent_diary_files(
     return diary_files# }}}
 
 class CONFIG:
-    NOTES_DIR: str = str(Path("@@doc_path@@") / "notes") # {{{
+    NOTES_DIR: str = os.path.join("@@doc_dir@@" , "notes") # {{{
     DAIRY_DIR: str = os.path.join(NOTES_DIR, '2-daily')
     TODO_DIR: str  = os.path.join(DAIRY_DIR, 'Todo')# }}}
     DAIRY_FORMAT: str = os.path.join(DAIRY_DIR, '%Y/%m/%Y-%m-%d.org')

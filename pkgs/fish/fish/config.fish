@@ -1,1 +1,0 @@
-/home/shan/dot/pkgs/fish/dist/config.fish

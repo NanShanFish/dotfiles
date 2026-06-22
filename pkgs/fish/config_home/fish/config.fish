@@ -4,9 +4,8 @@ fish_add_path --append ~/.local/bin ~/.cargo/bin ~/.rustup/toolchains/nightly-x8
 
 ###  ENVIRONMENT VARIABLES  ###
 set -Ux EDITOR /bin/nvim
-set -Ux BROWSER /bin/vivaldi-stable
-set -Ux XDG_DOWNLOAD_DIR "@@dls_path@@"
-set -Ux XDG_DOCUMENTS_DIR "@@doc_path@@"
+set -Ux XDG_DOWNLOAD_DIR "/home/shan/dls"
+set -Ux XDG_DOCUMENTS_DIR "/mnt/a/doc"
 set -gx LANG "zh_CN.UTF-8"
 # set -Ux DWM "$HOME/dot/extra/dwm"
 # set -Ux TRASH "$HOME/.local/trash"
