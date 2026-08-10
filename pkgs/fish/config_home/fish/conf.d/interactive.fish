@@ -23,9 +23,13 @@ if status is-interactive
     end
 
 	##  ALIAS  ##
-	alias lt='exa -T'
+    if set -q WSLENV
+        alias open='wslview'
+    else
+        alias open='xdg-open'
+    end
+	alias lt='exa --tree --git-ignore'
 	alias os='fastfetch'
-	alias open='xdg-open'
 	alias ta="tmux a > /dev/null || tmux"
 	alias lzg='lazygit'
 	alias lzd="lazydocker"
@@ -37,4 +41,17 @@ if status is-interactive
     bind \co '_fzf_search_directory'
     bind \cr '_fzf_search_history'
     bind \t '_fzf_complete'
+
+    abbr --erase cd &>/dev/null
+    complete --erase --command cd
+    alias cd=__zoxide_z
+
+    abbr --erase cdi &>/dev/null
+    complete --erase --command cdi
+    alias cdi=__zoxide_zi
+
+    function __zoxide_hook --on-variable PWD
+        test -z "$fish_private_mode"
+        and command zoxide add -- (__zoxide_pwd)
+    end
 end

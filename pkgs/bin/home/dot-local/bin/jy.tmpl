@@ -1,38 +1,42 @@
 #!/bin/bash
+# vim: set filetype=bash:
 
-doc_path="@@doc_dir@@"
+org_dir="@@doc_dir@@"/org
+
 verify() {
+    if ! test -d "$org_dir"; then
+        exit 1
+    fi
     if ! which ndate &> /dev/null; then
         exit 1
     fi
 }
 
 create-file(){
-    file_path="$doc_path/$1"
-    if [[ ! -e "$file_path" ]]; then
-        daily_dir=$(dirname $file_path)
+    cd $org_dir
+    if [[ ! -e "$1" ]]; then
+        daily_dir=$(dirname $1)
         if [[ ! -d "$daily_dir" ]]; then
             mkdir -p "$daily_dir"
         fi
-        touch "$file_path"
+        touch "$1"
     fi
-    cd $doc_path/notes
     if [ -z "$2" ]; then
-        nvim $file_path
+        nvim $1
     else
-        echo $file_path
+        echo $1
     fi
 }
 
 open() {
     if [ "$1" = "todo" ]; then
-        f="notes/2-daily/Todo/todo.org"
-        nvim "$doc_path/$f"
+        f="gtd.org"
+        nvim "$org_dir/$f"
         return
     elif [ -z "$1" ]; then
-        f="$(date "+notes/2-daily/%Y/%m/%Y-%m-%d.org")"
+        f="$(date "+journal/%Y/%m/%Y-%m-%d.org")"
     else
-        f="$(ndate "$1" -f "notes/2-daily/%Y/%m/%Y-%m-%d.org")"
+        f="$(ndate "$1" -f "journal/%Y/%m/%Y-%m-%d.org")"
     fi
 
     create-file $f $2

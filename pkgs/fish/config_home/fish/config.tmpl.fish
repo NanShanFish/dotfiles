@@ -1,6 +1,7 @@
 set -U fish_greeting ""
 
 fish_add_path --append ~/.local/bin ~/.cargo/bin ~/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin/
+fish_add_path --append ~.cache/.bun/bin
 
 ###  ENVIRONMENT VARIABLES  ###
 set -Ux EDITOR /bin/nvim
@@ -14,3 +15,4 @@ set -gx LANG "zh_CN.UTF-8"
 set -Ux PNPM_HOME "$HOME/.local/share/pnpm"
 # pnpm end
 
+true

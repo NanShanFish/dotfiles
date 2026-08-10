@@ -3,7 +3,7 @@ function cdp
     if test -n $argv[1]
         set -f --append cdp_fzf_opts --query="$argv[1]"
     end
-    set -f cdp_fd_opts --max-depth=2 --min-depth=2 -t d
+    set -f cdp_fd_opts --max-depth=1 --min-depth=1 -t d
     set -f path (fd $cdp_fd_opts --search-path=$HOME/prj --search-path=$HOME/win-prj | fzf $cdp_fzf_opts)
     if test -n "$path"
         cd $path

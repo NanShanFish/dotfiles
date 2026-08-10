@@ -14,6 +14,6 @@ function _fzf_complete
         set selected (printf "%s\n" $completions | _fzf_wrapper --query "$token" )
     end
 
-    commandline --replace --current-token $selected
+    commandline --replace --current-token -- $selected
     commandline -f repaint
 end
