@@ -1,0 +1,12 @@
+#:schema https://docs.jj-vcs.dev/latest/config-schema.json
+
+[user]
+name = "shan"
+email = "nanshanfish@outlook.com"
+
+[aliases]
+init = ["git", "init"]
+e = ["edit"]
+
+[ui]
+default-command =["log","-r","::@ ~ ::remote_bookmarks()-"]

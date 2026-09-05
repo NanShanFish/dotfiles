@@ -22,7 +22,7 @@ global_ctx: Context = {
     "paths": {
         "home": str(Path.home()),
         "config_home": str(Path.home() / ".config"),
-        "doc_dir": "/mnt/a/doc",
+        "doc_dir": str(Path.home() / "doc"),
         "dot_dir": str(Path.home() / "dot"),
         "dls_dir": str(Path.home() / "dls"),
         "root": "/"
