@@ -7,8 +7,8 @@ fish_add_path --append ~/.bun/bin
 ###  ENVIRONMENT VARIABLES  ###
 set -Ux EDITOR /bin/nvim
 set -Ux VISUAL /bin/nvim
-set -Ux XDG_DOWNLOAD_DIR "@@dls_dir@@"
-set -Ux XDG_DOCUMENTS_DIR "@@doc_dir@@"
+set -Ux XDG_DOWNLOAD_DIR "{=dls_dir=}"
+set -Ux XDG_DOCUMENTS_DIR "{=doc_dir=}"
 set -gx LANG "zh_CN.UTF-8"
 
 # pnpm
